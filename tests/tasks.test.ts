@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getTaskColumns } from './utils/get-task-columns';
+import { calculateTotalTime, getTaskColumns } from './utils/get-task-columns';
 import { getTasks } from './utils/get-tasks';
 import { getTotalWorkingDays } from './utils/get-total-working-days';
 import { filterStandupTasks, filterStartedTasks } from './utils/task-filters';
@@ -236,6 +236,7 @@ describe('Tasks', async () => {
       const workingDaysMap = new Map(workingDaysInput);
 
       for (const task of tasks) {
+        if (task.length === 0) continue;
         const { startDate, actualEndDate, actualHours, taskTimebreakdown, status } = getTaskColumns(task);
         if (status === 'Not Started') continue;
 
@@ -250,14 +251,15 @@ describe('Tasks', async () => {
           const dayWise = taskTimebreakdown.split('\n').map((d) => d.split('-').map((val) => val.trim()));
 
           for (const day of dayWise) {
-            const workingDayHours = workingDaysMap.get(day[0]);
+            const dayWiseStartDate = day[0];
+            const workingDayHours = workingDaysMap.get(dayWiseStartDate);
             if (workingDayHours !== undefined) {
               const [hours, minutes] = day[1].split(':');
               const minutesRoundoff = Math.round((Number(minutes) * 100) / 60) / 100;
               const totalTime = Number(hours) + minutesRoundoff;
-              workingDaysMap.set(day[0], workingDayHours + totalTime);
+              workingDaysMap.set(dayWiseStartDate, workingDayHours + totalTime);
             } else {
-              console.log('No working day :', startDate);
+              console.log('No working day :', dayWiseStartDate);
             }
           }
         }
@@ -272,4 +274,35 @@ describe('Tasks', async () => {
   // describe - status call
 
   // Each task should have all the columns filled
+
+  // Metrics
+  const standupTasks = tasks.filter((t) => {
+    const { taskType } = getTaskColumns(t);
+    return taskType === 'Daily Standup';
+  });
+  const statusCallTasks = tasks.filter((t) => {
+    const { taskType } = getTaskColumns(t);
+    return taskType === 'Status Call';
+  });
+  const monthlyCycleTasks = tasks.filter((t) => {
+    if (t.length === 0) return false;
+    const { status } = getTaskColumns(t);
+    return status !== 'Not Started';
+  });
+
+  const totalStandupTime = calculateTotalTime(standupTasks);
+  const totalStatusCallTime = calculateTotalTime(statusCallTasks);
+  const totalMonthlyCycleTasks = calculateTotalTime(monthlyCycleTasks);
+
+  const totalNonTechnicalTime = totalStandupTime + totalStatusCallTime;
+  const percentageOfNonTechnicalTime = totalMonthlyCycleTasks === 0 ? 0 : Math.round((totalNonTechnicalTime * 100) / totalMonthlyCycleTasks);
+
+  console.log(`Standup: ${totalStandupTime}Hrs`);
+  console.log(`Status call: ${totalStatusCallTime}Hrs`);
+  console.log(`Cycle working hours: ${workingDays.totalWorkingDays * 8}Hrs`);
+  console.log(`Expected working hours: ${workingDays.totalWorkingDaysTillToday * 8}Hrs`);
+  console.log(`Worked: ${totalMonthlyCycleTasks}Hrs`);
+
+  console.log(`Non Technical time: ${totalNonTechnicalTime}Hrs`);
+  console.log(`Percentage of non-technical work: ${percentageOfNonTechnicalTime}%`);
 });

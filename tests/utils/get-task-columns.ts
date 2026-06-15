@@ -33,3 +33,9 @@ export function getTaskColumns(task: string[]) {
     comment,
   };
 }
+
+export const calculateTotalTime = (tasks: string[][]) =>
+  tasks.reduce((acc, t) => {
+    const { actualHours } = getTaskColumns(t);
+    return Number(actualHours) + acc;
+  }, 0);
