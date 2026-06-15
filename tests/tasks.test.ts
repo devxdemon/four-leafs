@@ -211,7 +211,7 @@ describe('Tasks', async () => {
         return startDate !== actualEndDate && taskTimebreakdown !== '' && taskTimebreakdown !== undefined;
       });
       const calculatedTime = moreThanTwoDaysTasks.filter((t) => {
-        const { actualHours, taskTimebreakdown, title } = getTaskColumns(t);
+        const { actualHours, taskTimebreakdown } = getTaskColumns(t);
         const dateTimeBreakdown = taskTimebreakdown.split('\n');
         const totalTime = dateTimeBreakdown
           .map((s) => s.split('-'))
@@ -231,7 +231,45 @@ describe('Tasks', async () => {
     });
 
     // Each working day should have at least 7.5 hours
+    test('Each working day should have at least 7.5 hours', () => {
+      const workingDaysInput: [string, number][] = workingDays.workingDatesTillToday.map((d) => [d, 0]);
+      const workingDaysMap = new Map(workingDaysInput);
+
+      for (const task of tasks) {
+        const { startDate, actualEndDate, actualHours, taskTimebreakdown, status } = getTaskColumns(task);
+        if (status === 'Not Started') continue;
+
+        if (startDate === actualEndDate) {
+          const workingDayHours = workingDaysMap.get(startDate);
+          if (workingDayHours !== undefined) {
+            workingDaysMap.set(startDate, workingDayHours + Number(actualHours));
+          } else {
+            console.log('No working day :', startDate);
+          }
+        } else {
+          const dayWise = taskTimebreakdown.split('\n').map((d) => d.split('-').map((val) => val.trim()));
+
+          for (const day of dayWise) {
+            const workingDayHours = workingDaysMap.get(day[0]);
+            if (workingDayHours !== undefined) {
+              const [hours, minutes] = day[1].split(':');
+              const minutesRoundoff = Math.round((Number(minutes) * 100) / 60) / 100;
+              const totalTime = Number(hours) + minutesRoundoff;
+              workingDaysMap.set(day[0], workingDayHours + totalTime);
+            } else {
+              console.log('No working day :', startDate);
+            }
+          }
+        }
+      }
+
+      const workingDaysArray = Array.from(workingDaysMap);
+      const minValidWorkingDays = workingDaysArray.filter((val) => val[1] < 7);
+      expect(minValidWorkingDays).toEqual([]);
+    });
   });
+
+  // describe - status call
 
   // Each task should have all the columns filled
 });
