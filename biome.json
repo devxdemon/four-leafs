@@ -16,6 +16,12 @@
         "noUnusedTemplateLiteral": "warn",
         "noUselessElse": "warn",
         "useSelfClosingElements": "warn"
+      },
+      "correctness": {
+        "noUnusedImports": {
+          "fix": "safe",
+          "level": "error"
+        }
       }
     }
   },
