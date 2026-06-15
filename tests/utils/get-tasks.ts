@@ -3,7 +3,7 @@ import { google } from 'googleapis';
 
 config({ path: '.env', quiet: true });
 
-async function main() {
+export async function getTasks() {
   try {
     const sheets = google.sheets({ version: 'v4', auth: process.env.GOOGLE_API_KEY });
 
@@ -14,16 +14,9 @@ async function main() {
 
     const rows = result.data.values;
 
-    if (!rows || rows.length === 0) {
-      console.log('No data found');
-      return;
-    }
-
-    console.log('Data: ', rows);
+    return rows;
   } catch (err) {
     console.log('Failed to get data');
     console.log('Error: ', err);
   }
 }
-
-main();
