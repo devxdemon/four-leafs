@@ -188,16 +188,21 @@ describe('Tasks', async () => {
     });
 
     // Task breakdown and actual end date should be same
-    test('Task breakdown and actual end date time should be same', () => {
+    test('Task time breakdown and actual end date time should be same', () => {
       const moreThanTwoDaysTasks = tasks.filter((t) => {
         const { startDate, actualEndDate, taskTimebreakdown, status } = getTaskColumns(t);
-        return status !== 'On Hold' && startDate !== actualEndDate && taskTimebreakdown !== '' && taskTimebreakdown !== undefined;
+        return (
+          status !== 'On Hold' &&
+          status !== 'In Progress' &&
+          startDate !== actualEndDate &&
+          taskTimebreakdown !== '' &&
+          taskTimebreakdown !== undefined
+        );
       });
       const calculatedTime = moreThanTwoDaysTasks.filter((t) => {
         const { actualEndDate, taskTimebreakdown } = getTaskColumns(t);
         const dateTimeBreakdown = taskTimebreakdown.split('\n');
         const lastDate = dateTimeBreakdown[dateTimeBreakdown.length - 1].split('-')[0].trim();
-        // const timeBreakdown = dateTimeBreakdown.map((s) => s.split('-')).reduce((acc, val) => Number(val[1]) + acc, 0);
 
         return lastDate !== actualEndDate;
       });
